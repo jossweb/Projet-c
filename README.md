@@ -1,8 +1,8 @@
 # Projet-c
 Problème des missionnaires et des cannibales
 
-## Télécharger raylib sous MacOS
-prérequis : avoir brew d'installé avoir un MacBook M5 MAX  
+## Télécharger raylib sous MacOS(Intel/Apple silicon)
+prérequis : avoir brew d'installé
 
 ```bash
 brew install raylib
@@ -11,6 +11,7 @@ brew install raylib
 ## Télécharger et build raylib sous linux
 
 prérequis :
+optionnel : avoir un CPU
 ```bash
 sudo apt install build-essential git libasound2-dev libx11-dev libxrandr-dev libxi-dev \
      libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev \
