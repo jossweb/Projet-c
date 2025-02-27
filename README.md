@@ -10,8 +10,7 @@ brew install raylib
 
 ## Télécharger et build raylib sous linux
 
-prérequis :
-optionnel : avoir un CPU
+prérequis : /
 ```bash
 sudo apt install build-essential git libasound2-dev libx11-dev libxrandr-dev libxi-dev \
      libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev \
