@@ -52,7 +52,7 @@ Player canibal1;
 Player canibal2;
 Player canibal3;
 //player list
-Player players[6];;
+Player* players[6];
 //global boat
 Boat boat;
 //global piles
@@ -76,21 +76,27 @@ void UnloadGameTextures() {
 }
 
 // game functions
-Pile *InitStartPile(Pile *pileStart, int i){
-    if(pileStart->p){
-        Pile *NewPile = (Pile *)malloc(sizeof(Pile));
-        NewPile->p = &players[i];
-        NewPile->prev = pileStart;
-        pileStart= NewPile;
-    } else {
-        pileStart->p = &players[i];
-        pileStart->prev = NULL;
+int PileSize(Pile p, int size){
+    if(p.p == NULL){
+        return size;
     }
-    i++;
-    if(6<i){
-        return InitStartPile(pileStart, i);
+    if(p.prev == NULL) {
+        return size + 1;
     }
-    return pileStart;
+    return PileSize(*p.prev, size + 1);
+}
+Pile *InitStartPile(Pile *pileStart, int i) {
+    if (i >= 6) {
+        return pileStart;
+    }
+
+    Pile *newPile = (Pile *)malloc(sizeof(Pile));
+    newPile->p = players[i];
+    newPile->prev = pileStart;
+
+    printf("InitStartPile --------------------- %d\n", PileSize(*newPile, 0));
+
+    return InitStartPile(newPile, i + 1);
 }
 Player createplayer(int type, int x, int y){
     Player p;
@@ -149,29 +155,15 @@ void DrawIntro() {
 
     
 }
-int PileSize(Pile p, int size){
-    if(p.p == NULL){
-        return size;
-    }
-    if(p.prev == NULL) {
-        return size + 1;
-    }
-    return PileSize(*p.prev, size + 1);
-}
 void InitPile(Pile *p){
     p->p= NULL;
     p->prev = NULL;
 }
 void PrintEntities(){
     // Create humans
-    printPlayer(human1, PLAYERSCALE);
-    printPlayer(human2, PLAYERSCALE);
-    printPlayer(human3, PLAYERSCALE);
-
-    // Create canibals
-    printPlayer(canibal1, PLAYERSCALE);
-    printPlayer(canibal2, PLAYERSCALE);
-    printPlayer(canibal3, PLAYERSCALE);
+   for(int i = 0; i < 6; i++){
+        printPlayer(*players[i], PLAYERSCALE);
+    }
 
     // Create boat and print it
     printBoat(boat, PLAYERSCALE);
@@ -190,38 +182,41 @@ void InitEntites(){
     InitBoat();
 }
 void movePlayer(Player *p){
-    if(p->onMove){
-        if(p->position.x == p->stopPosition.x && p->position.y == p->stopPosition.y){
+    if (p->onMove) {
+        Vector2 direction = {
+            p->stopPosition.x - p->position.x,
+            p->stopPosition.y - p->position.y
+        };
+        float distance = sqrtf(direction.x * direction.x + direction.y * direction.y);
+
+        if (distance < 1.0f) { // Seuil de tolérance
+            p->position = p->stopPosition;
             p->onMove = 0;
         } else {
-            if(p->position.x < p->stopPosition.x){
-                p->position.x += 1;
-            } else if(p->position.x > p->stopPosition.x){
-                p->position.x -= 1;
-            }
-            if(p->position.y < p->stopPosition.y){
-                p->position.y += 1;
-            } else if(p->position.y > p->stopPosition.y){
-                p->position.y -= 1;
-            }
+            direction.x /= distance;
+            direction.y /= distance;
+            const float speed = 2.0f; 
+            p->position.x += direction.x * speed;
+            p->position.y += direction.y * speed;
         }
-        printPlayer(*p, PLAYERSCALE);
     }
+
     printPlayer(*p, PLAYERSCALE);
 }
-void InitTable(){
-    players[0] = human1;
-    players[1] = human2;
-    players[2] = human3;
-    players[3] = canibal1;
-    players[4] = canibal2;
-    players[5] = canibal3;
+void InitTable() {
+    players[0] = &human1;
+    players[1] = &human2;
+    players[2] = &human3;
+    players[3] = &canibal1;
+    players[4] = &canibal2;
+    players[5] = &canibal3;
 }
-void FirstInit(){
+void FirstInit() {
     InitPile(&startList);
     InitPile(&inTravelList);
     InitPile(&endList);
-    InitStartPile(&startList, 0);
+    Pile *initializedPile = InitStartPile(&startList, 0);
+    startList = *initializedPile;
 }
 void PopPile(Pile *p){
     if(p->prev == NULL){
@@ -232,19 +227,21 @@ void PopPile(Pile *p){
     }
 }
 void game(){
-    printf("game ---------------------\n");
+    printf("game --------------------- %d\n", PileSize(startList, 0));
     printf("boat state : %d\n", boat.State);
     int playermoving = 0; // 1 = 1 player (or more) is moving; 0 = no player is moving
     for(int i = 0; i < 6; i++){
-        if(players[i].onMove){
+        printf("in\n");
+        if(players[i]->onMove){
             playermoving = 1;
         }
     }
     if(playermoving){
         printf("player moving ---------------------\n");
         for(int i = 0; i < 6; i++){
-            if(players[i].onMove){
-                movePlayer(&players[i]);
+            if(players[i]->onMove){
+                printf("x : %d, y : %d\n", (int)players[i]->position.x, (int)players[i]->position.y);
+                movePlayer(players[i]);
             }
         }
     }
@@ -253,19 +250,22 @@ void game(){
     }
     else if(boat.State == 1){
         printf("good boat state ---------------------\n Pile size : %d\n", PileSize(startList, 0));
-        if(PileSize(startList, 0) == 6){ //First move
+        if (PileSize(startList, 0) == 6) { // First move
             printf("first move ---------------------\n");
-            startList.p->onMove = 1;
-            startList.p->stopPosition.x = boat.position.x;
-            startList.p->stopPosition.y = boat.position.y;
-            movePlayer(startList.p);
-            PopPile(&startList);
-            startList.p->onMove = 1;
-            startList.p->stopPosition.x = boat.position.x;
-            startList.p->stopPosition.y = boat.position.y;
-            movePlayer(startList.p);
-            PopPile(&startList);
-            
+            if (startList.p != NULL) {
+                startList.p->onMove = 1;
+                startList.p->stopPosition.x = boat.position.x;
+                startList.p->stopPosition.y = boat.position.y;
+                movePlayer(startList.p);
+                PopPile(&startList);
+            }
+            if (startList.p != NULL) {
+                startList.p->onMove = 1;
+                startList.p->stopPosition.x = boat.position.x;
+                startList.p->stopPosition.y = boat.position.y;
+                movePlayer(startList.p);
+                PopPile(&startList);
+            }
         }
         else{
             // exécuter le code pour déplacer les joueurs
@@ -281,7 +281,7 @@ int main(void)
     InitWindow(WIDTH, HEIGHT, "Projet C par Rémy.M et Jossua.F");
     FirstInit();
     LoadGameTextures();
-    SetTargetFPS(30);
+    SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
