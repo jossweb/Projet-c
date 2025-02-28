@@ -249,7 +249,11 @@ void moveBoat() {
 
         if (distance < 2.0f) {
             boat.position = boat.destination;
-            boat.location = 3;
+            if(boat.destination.x == BOATSTARTX){
+                boat.location = 1;
+            } else {
+                boat.location = 3;
+            }
         } else {
             direction.x /= distance;
             direction.y /= distance;
@@ -287,18 +291,18 @@ void FromBoatToEnd(){
         Pile *movedPile = malloc(sizeof(Pile));
         *movedPile = onBoat;
         movedPile->prev = NULL;
+
+        // Ajouter l'élément à endPile
         if (endPile.p == NULL) {
             endPile.p = movedPile->p;
             endPile.prev = movedPile->prev;
             free(movedPile);
         } else {
-            Pile *current = &endPile;
-            while (current->prev != NULL) {
-                current = current->prev;
-            }
-            current->prev = movedPile;
+            movedPile->prev = endPile.prev;
+            endPile.prev = movedPile;
         }
-        onBoat = *temp;
+
+        onBoat = *temp; // Mettre à jour onBoat
     }
 }
 void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
@@ -347,12 +351,17 @@ void game(){
                     startPile.p->destination = boatPosition[i];
                     FromStartToBoat();
                 }
-                printf("start ----- %d\n", PileSize(startPile, 0));
-                printf("start ----- %d\n", PileSize(onBoat, 0));
+            }
+            if((PileSize(startPile, 0) < 6)&&(PileSize(onBoat, 0) == 1)){
+                startPile.p->onMove=1;
+                updatePlayersPositonsInBoat();
+                startPile.p->destination = boatPosition[1];
+                FromStartToBoat();
             }
         }
     }else{ //boat at end
         printf("on move : %d\n", onBoat.p->onMove);
+        printf("at end : %d\n", PileSize(endPile, 0));
         if(!movePlayers()){
             printf("end ----- %d\n", PileSize(onBoat, 0));
             if(PileSize(onBoat, 0) == 2){
@@ -363,7 +372,7 @@ void game(){
                 }
                 else{
                     finalDestination = endPile.p->position;
-                    finalDestination.x -= 50;
+                    finalDestination.x += 50;
                 }
                 FromBoatToEnd();
                 endPile.p->onMove = 1;
@@ -393,7 +402,7 @@ int main(void)
     InitWindow(WIDTH, HEIGHT, "Projet C par Rémy.M et Jossua.F");
     
     LoadGameTextures();
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     while (!WindowShouldClose())
     {
