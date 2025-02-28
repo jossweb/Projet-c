@@ -39,7 +39,8 @@ typedef struct Pile Pile;
 
 struct Boat {
     Vector2 position;
-    int onMove; // 0 = not moving; 1 = moving
+    int location; // 0 = moving; 1 = start; 2 = end
+    Vector2 destination;
 };
 typedef struct Boat Boat;
 
@@ -59,6 +60,9 @@ Pile endPile;
 
 //array
 Player *players[6];
+
+//Location of player in boat
+Vector2 boatPosition[2];
 
 void LoadGameTextures() {
     missionaryTexture = LoadTexture("assets/missionnaire.png");
@@ -93,7 +97,7 @@ Boat InitBoat(){
     Boat b;
     b.position.x = BOATSTARTX;
     b.position.y = 450;
-    b.onMove = 0;
+    b.location = 1;
     return b;
 }
 
@@ -195,9 +199,9 @@ void InitEntites(){
 
     // Add players to the global array
     players[0] = &human1;
-    players[1] = &human2;
+    players[1] = &canibal1;
     players[2] = &human3;
-    players[3] = &canibal1;
+    players[3] = &human2;
     players[4] = &canibal2;
     players[5] = &canibal3;
 
@@ -207,6 +211,7 @@ void InitEntites(){
 
     // Initialize boat
     boat = InitBoat();
+    InitPile(&onBoat);
 }
 int movePlayers() {
     int moved = 0; // 0 = no player moved; 1 = 1 player (or more) moved
@@ -219,7 +224,7 @@ int movePlayers() {
             };
             float distance = sqrtf(direction.x * direction.x + direction.y * direction.y);
 
-            if (distance < 1.0f) { // Seuil de tolérance
+            if (distance < 1.0f) {
                 p->position = p->destination;
                 p->onMove = 0;
             } else {
@@ -234,25 +239,72 @@ int movePlayers() {
     }
     return moved;
 }
+void moveBoat() {
+    if (boat.location == 0){
+        Vector2 direction = {
+            boat.destination.x - boat.position.x,
+            boat.destination.y - boat.position.y
+        };
+        float distance = sqrtf(direction.x * direction.x + direction.y * direction.y);
+
+        if (distance < 2.0f) {
+            boat.position = boat.destination;
+            boat.location = 3;
+        } else {
+            direction.x /= distance;
+            direction.y /= distance;
+            const float speed = 2.0f; 
+            boat.position.x += direction.x * speed;
+            boat.position.y += direction.y * speed;
+        }
+    }
+}
 void FromStartToBoat(){
     if(PileSize(startPile, 0) > 0){
         Pile *temp = startPile.prev;
-        startPile.prev = onBoat.prev;
-        onBoat.prev = &startPile;
+        Pile *movedPile = malloc(sizeof(Pile));
+        *movedPile = startPile;
+        movedPile->prev = NULL;
+        if (onBoat.p == NULL) {
+            printf("1-------\n");
+            onBoat.p = movedPile->p;
+            onBoat.prev = movedPile->prev;
+            free(movedPile);
+        } else {
+            printf("2-------\n");
+            Pile *current = &onBoat;
+            while (current->prev != NULL) {
+                current = current->prev;
+            }
+            current->prev = movedPile;
+        }
         startPile = *temp;
     }
 }
+void updatePlayersPositonsInBoat(){
+    boatPosition[0].x = boat.position.x + 110;
+    boatPosition[0].y = boat.position.y - 110;
+    boatPosition[1].x = boat.position.x + 50;
+    boatPosition[1].y = boat.position.y - 110;
+}
 void game(){
-    if(boat.onMove){
-        //faire avancer le bateau
+    if(boat.location == 0){
+        printf("START MOVING");
+        moveBoat();
     }
-    else{
+    else if(boat.location == 1){
         if(!movePlayers()){
+            if(PileSize(onBoat, 0) == 2){
+                boat.location = 0;
+                boat.destination.x = 400;
+                boat.destination.y = 450;
+            }
             if(PileSize(startPile, 0) == 6){
                 //starting scenario
                 for(int i=0; i<2; i++){ //goal here : take 2 players from start pile to boat
                     startPile.p->onMove=1;
-                    startPile.p->destination = boat.position;
+                    updatePlayersPositonsInBoat();
+                    startPile.p->destination = boatPosition[i];
                     FromStartToBoat();
                 }
             }
@@ -285,7 +337,6 @@ int main(void)
                 DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
             }
             PrintEntities();
-            printf("Start Game -----------------");
             game();
             EndDrawing();
         }
