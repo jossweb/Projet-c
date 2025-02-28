@@ -26,8 +26,8 @@ GameState current = STATE_INTRO;
 struct Player{
     Vector2 position;
     int type; // 0 = missionary; 1 = cannibal
-    int onMove; // 0 = no; 1 = yes
-    Vector2 stopPosition;
+    Vector2 destination;
+    int onMove; // 0 = not moving; 1 = moving
 };
 typedef struct Player Player;
 
@@ -39,8 +39,7 @@ typedef struct Pile Pile;
 
 struct Boat {
     Vector2 position;
-    int State; // 0 = on move; 1 = stopped at start; 2 = stopped at end
-    int newState; // 0 = State Value don't change since last frame; 1 = State Value changed since last frame
+    int onMove; // 0 = not moving; 1 = moving
 };
 typedef struct Boat Boat;
 
@@ -51,16 +50,16 @@ Player human3;
 Player canibal1;
 Player canibal2;
 Player canibal3;
-//player list
-Player* players[6];
-//global boat
 Boat boat;
-//global piles
-Pile startList;
-Pile inTravelList;
-Pile endList;
 
-// loading game functions
+//piles
+Pile startPile;
+Pile onBoat;
+Pile endPile;
+
+//array
+Player *players[6];
+
 void LoadGameTextures() {
     missionaryTexture = LoadTexture("assets/missionnaire.png");
     cannibalTexture = LoadTexture("assets/cannibale.png");
@@ -75,37 +74,13 @@ void UnloadGameTextures() {
     UnloadTexture(backgroundTexture);
 }
 
-// game functions
-int PileSize(Pile p, int size){
-    if(p.p == NULL){
-        return size;
-    }
-    if(p.prev == NULL) {
-        return size + 1;
-    }
-    return PileSize(*p.prev, size + 1);
-}
-Pile *InitStartPile(Pile *pileStart, int i) {
-    if (i >= 6) {
-        return pileStart;
-    }
-
-    Pile *newPile = (Pile *)malloc(sizeof(Pile));
-    newPile->p = players[i];
-    newPile->prev = pileStart;
-
-    printf("InitStartPile --------------------- %d\n", PileSize(*newPile, 0));
-
-    return InitStartPile(newPile, i + 1);
-}
 Player createplayer(int type, int x, int y){
     Player p;
     p.position.x = x;
     p.position.y = y;
     p.type = type;
     p.onMove = 0;
-    p.stopPosition.x = 0;
-    p.stopPosition.y = 0;
+    p.destination = p.position;
     return p;
 }
 
@@ -114,11 +89,12 @@ void printPlayer(Player p, float scale){
     DrawTextureEx(*texture, (Vector2){p.position.x, p.position.y}, 0.0f, scale, WHITE);
 }
 
-void InitBoat(){
-    boat.position.x = BOATSTARTX;
-    boat.position.y = 450;
-    boat.State= 1; //initial position 
-    boat.newState = 0;    
+Boat InitBoat(){
+    Boat b;
+    b.position.x = BOATSTARTX;
+    b.position.y = 450;
+    b.onMove = 0;
+    return b;
 }
 
 void printBoat(Boat b, float scale){
@@ -155,18 +131,57 @@ void DrawIntro() {
 
     
 }
+int PileSize(Pile p, int size){
+    if(p.p == NULL){
+        return size;
+    }
+    if(p.prev == NULL) {
+        return size + 1;
+    }
+    return PileSize(*p.prev, size + 1);
+}
 void InitPile(Pile *p){
     p->p= NULL;
     p->prev = NULL;
 }
 void PrintEntities(){
-    // Create humans
-   for(int i = 0; i < 6; i++){
-        printPlayer(*players[i], PLAYERSCALE);
-    }
+    // Create players
+    printPlayer(human1, PLAYERSCALE);
+    printPlayer(human2, PLAYERSCALE);
+    printPlayer(human3, PLAYERSCALE);
+
+    // Create canibals
+    printPlayer(canibal1, PLAYERSCALE);
+    printPlayer(canibal2, PLAYERSCALE);
+    printPlayer(canibal3, PLAYERSCALE);
 
     // Create boat and print it
     printBoat(boat, PLAYERSCALE);
+}
+void InitStartPile(Player *players[]) {
+    Pile *current = &startPile;
+    for (int i = 0; i < 6; i++) {
+        current->p = players[i];
+        if (i < 5) {
+            current->prev = malloc(sizeof(Pile));
+            current = current->prev;
+        } else {
+            current->prev = NULL;
+        }
+    }
+}
+
+void PrintPileTypes(Pile p) {
+    if(p.p == NULL) {
+        printf("Pile is empty\n");
+        return;
+    }
+    
+    printf("Player type: %d\n", p.p->type);
+    
+    if(p.prev != NULL) {
+        PrintPileTypes(*p.prev);
+    }
 }
 void InitEntites(){
     human1 = createplayer(0, 1250, 400);
@@ -178,108 +193,77 @@ void InitEntites(){
     canibal2 = createplayer(1, 1125, 500);
     canibal3 = createplayer(1, 1050, 500);
 
-    //init boat
-    InitBoat();
-}
-void movePlayer(Player *p){
-    if (p->onMove) {
-        Vector2 direction = {
-            p->stopPosition.x - p->position.x,
-            p->stopPosition.y - p->position.y
-        };
-        float distance = sqrtf(direction.x * direction.x + direction.y * direction.y);
-
-        if (distance < 1.0f) { // Seuil de tolérance
-            p->position = p->stopPosition;
-            p->onMove = 0;
-        } else {
-            direction.x /= distance;
-            direction.y /= distance;
-            const float speed = 2.0f; 
-            p->position.x += direction.x * speed;
-            p->position.y += direction.y * speed;
-        }
-    }
-
-    printPlayer(*p, PLAYERSCALE);
-}
-void InitTable() {
+    // Add players to the global array
     players[0] = &human1;
     players[1] = &human2;
     players[2] = &human3;
     players[3] = &canibal1;
     players[4] = &canibal2;
     players[5] = &canibal3;
+
+    // Initialize start pile
+    InitStartPile(players);
+    PrintPileTypes(startPile);
+
+    // Initialize boat
+    boat = InitBoat();
 }
-void FirstInit() {
-    InitPile(&startList);
-    InitPile(&inTravelList);
-    InitPile(&endList);
-    Pile *initializedPile = InitStartPile(&startList, 0);
-    startList = *initializedPile;
+int movePlayers() {
+    int moved = 0; // 0 = no player moved; 1 = 1 player (or more) moved
+    for (int i = 0; i < 6; i++) {
+        Player *p = players[i];
+        if (p->onMove) {
+            Vector2 direction = {
+                p->destination.x - p->position.x,
+                p->destination.y - p->position.y
+            };
+            float distance = sqrtf(direction.x * direction.x + direction.y * direction.y);
+
+            if (distance < 1.0f) { // Seuil de tolérance
+                p->position = p->destination;
+                p->onMove = 0;
+            } else {
+                direction.x /= distance;
+                direction.y /= distance;
+                const float speed = 2.0f; 
+                p->position.x += direction.x * speed;
+                p->position.y += direction.y * speed;
+                moved = 1;
+            }
+        }
+    }
+    return moved;
 }
-void PopPile(Pile *p){
-    if(p->prev == NULL){
-        p->p = NULL;
-    }else{
-        p->p = NULL;
-        p = p->prev;
+void FromStartToBoat(){
+    if(PileSize(startPile, 0) > 0){
+        Pile *temp = startPile.prev;
+        startPile.prev = onBoat.prev;
+        onBoat.prev = &startPile;
+        startPile = *temp;
     }
 }
 void game(){
-    printf("game --------------------- %d\n", PileSize(startList, 0));
-    printf("boat state : %d\n", boat.State);
-    int playermoving = 0; // 1 = 1 player (or more) is moving; 0 = no player is moving
-    for(int i = 0; i < 6; i++){
-        printf("in\n");
-        if(players[i]->onMove){
-            playermoving = 1;
-        }
+    if(boat.onMove){
+        //faire avancer le bateau
     }
-    if(playermoving){
-        printf("player moving ---------------------\n");
-        for(int i = 0; i < 6; i++){
-            if(players[i]->onMove){
-                printf("x : %d, y : %d\n", (int)players[i]->position.x, (int)players[i]->position.y);
-                movePlayer(players[i]);
+    else{
+        if(!movePlayers()){
+            if(PileSize(startPile, 0) == 6){
+                //starting scenario
+                for(int i=0; i<2; i++){ //goal here : take 2 players from start pile to boat
+                    startPile.p->onMove=1;
+                    startPile.p->destination = boat.position;
+                    FromStartToBoat();
+                }
             }
         }
-    }
-    else if(boat.State == 0){
-        // exécuter le code pour déplacer le bateau
-    }
-    else if(boat.State == 1){
-        printf("good boat state ---------------------\n Pile size : %d\n", PileSize(startList, 0));
-        if (PileSize(startList, 0) == 6) { // First move
-            printf("first move ---------------------\n");
-            if (startList.p != NULL) {
-                startList.p->onMove = 1;
-                startList.p->stopPosition.x = boat.position.x;
-                startList.p->stopPosition.y = boat.position.y;
-                movePlayer(startList.p);
-                PopPile(&startList);
-            }
-            if (startList.p != NULL) {
-                startList.p->onMove = 1;
-                startList.p->stopPosition.x = boat.position.x;
-                startList.p->stopPosition.y = boat.position.y;
-                movePlayer(startList.p);
-                PopPile(&startList);
-            }
-        }
-        else{
-            // exécuter le code pour déplacer les joueurs
-        }
-    }
-    else if(boat.State == 2 && boat.newState == 1){
-        // exécuter le code pour déplacer les joueurs
     }
 }
 int main(void)
 {
     InitEntites();
     InitWindow(WIDTH, HEIGHT, "Projet C par Rémy.M et Jossua.F");
-    FirstInit();
+    
     LoadGameTextures();
     SetTargetFPS(60);
 
@@ -300,8 +284,9 @@ int main(void)
                 
                 DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
             }
-            game();
             PrintEntities();
+            printf("Start Game -----------------");
+            game();
             EndDrawing();
         }
 
