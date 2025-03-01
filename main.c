@@ -272,11 +272,11 @@ void InitEntites(){
     canibal3 = createplayer(1, 1050, 500);
 
     // Add players to the global array
-    players[0] = &human1;
-    players[1] = &canibal1;
-    players[2] = &human3;
-    players[3] = &human2;
-    players[4] = &canibal2;
+    players[0] = &canibal1;
+    players[1] = &human1;
+    players[2] = &canibal2;
+    players[3] = &human3;
+    players[4] = &human2;
     players[5] = &canibal3;
 
     // Initialize start pile
@@ -508,26 +508,25 @@ void game(){
                 }
                 else{
                     finalDestination = endPile.p->position;
-                    finalDestination.x += 50;
+                    finalDestination.x += 75;
                 }
                 FromBoatToEnd();
                 endPile.p->onMove = 1;
                 endPile.p->destination = finalDestination;
                 if(!PileSize(startPile, 0)){ //last situation
                     FromBoatToEnd();
-                    finalDestination = endPile.p->position;
-                    finalDestination.x -= 50;
-                    FromBoatToEnd();
                     endPile.p->onMove = 1;
                     endPile.p->destination = finalDestination;
                 }
             }else{
-                boat.location = 0;
-                boat.destination.x = BOATSTARTX;
-                boat.destination.y = 450;
-                onBoat.p->onMove = 1;
-                Vector2 destination = {boat.destination.x + 50, boat.position.y - 110};
-                onBoat.p->destination = destination;
+                if(startPile.p){
+                    boat.location = 0;
+                    boat.destination.x = BOATSTARTX;
+                    boat.destination.y = 450;
+                    onBoat.p->onMove = 1;
+                    Vector2 destination = {boat.destination.x + 50, boat.position.y - 110};
+                    onBoat.p->destination = destination;
+                }
             }
         }
     }
