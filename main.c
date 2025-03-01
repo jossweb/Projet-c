@@ -452,10 +452,10 @@ void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
     }
 }
 void updatePlayersPositonsInBoat(){
-    boatPosition[0].x = boat.position.x + 75;
-    boatPosition[0].y = boat.position.y - 100;
-    boatPosition[1].x = boat.position.x + 25;
-    boatPosition[1].y = boat.position.y - 100;
+    boatPosition[0].x = boat.position.x + 50;
+    boatPosition[0].y = boat.position.y - 110;
+    boatPosition[1].x = boat.position.x + 150;
+    boatPosition[1].y = boat.position.y - 110;
 }
 void game(){
     if(boat.location == 0){
@@ -470,9 +470,9 @@ void game(){
                 boat.location = 0;
                 boat.destination.x = 400;
                 boat.destination.y = 450;
-                Vector2 destinationP1 = {boat.destination.x + 110, boat.position.y - 110};
-                Vector2 destinationP2 = {boat.destination.x + 50, boat.position.y - 110};
-                SetDestinationToPlayerOnBoat(destinationP1, destinationP2);
+                Vector2 destinationP1 = {boat.destination.x + 50, boat.position.y - 110};
+                Vector2 destinationP2 = {boat.destination.x + 150, boat.position.y - 110};
+                SetDestinationToPlayerOnBoat(destinationP2, destinationP1);
 
             }
             if(PileSize(startPile, 0) == 6){
@@ -503,12 +503,16 @@ void game(){
             if(PileSize(onBoat, 0) == 2){
                 Vector2 finalDestination;
                 if(!PileSize(endPile, 0)){
-                    finalDestination.x = 0;
+                    finalDestination.x = -20;
                     finalDestination.y = 350;
                 }
                 else{
                     finalDestination = endPile.p->position;
-                    finalDestination.x += 75;
+                    if(endPile.p->type == 0){
+                        finalDestination.x += 110;
+                    }else{ 
+                        finalDestination.x += 30;
+                    }
                 }
                 FromBoatToEnd();
                 endPile.p->onMove = 1;
@@ -516,6 +520,8 @@ void game(){
                 if(!PileSize(startPile, 0)){ //last situation
                     FromBoatToEnd();
                     endPile.p->onMove = 1;
+                    finalDestination.x = 150;
+                    finalDestination.y = 550;
                     endPile.p->destination = finalDestination;
                 }
             }else{
@@ -524,7 +530,7 @@ void game(){
                     boat.destination.x = BOATSTARTX;
                     boat.destination.y = 450;
                     onBoat.p->onMove = 1;
-                    Vector2 destination = {boat.destination.x + 50, boat.position.y - 110};
+                    Vector2 destination = {boat.destination.x + 100, boat.position.y - 110};
                     onBoat.p->destination = destination;
                 }
             }
