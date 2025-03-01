@@ -19,8 +19,10 @@ typedef enum {
 Texture2D missionaryTexture;
 Texture2D cannibalTexture;
 Texture2D boatTexture;
+Texture2D IntrobackgroundTexture;
 Texture2D backgroundTexture;
 GameState current = STATE_INTRO;
+int gamePaused = 0;
 
 
 struct Player{
@@ -68,6 +70,7 @@ void LoadGameTextures() {
     missionaryTexture = LoadTexture("assets/missionnaire.png");
     cannibalTexture = LoadTexture("assets/cannibale.png");
     boatTexture = LoadTexture("assets/bateau.png");
+    IntrobackgroundTexture = LoadTexture("assets/intro.png");
     backgroundTexture = LoadTexture("assets/fond.png");
 }
 
@@ -118,23 +121,94 @@ void printBoat(Boat b, float scale){
 void DrawIntro() {
     // Background
     ClearBackground(BLACK);
-    float scale = (float)(WIDTH) / (float)(backgroundTexture.width);
-    float posX = (WIDTH - (backgroundTexture.width * scale)) * 0.5f;
-    float posY = (HEIGHT - (backgroundTexture.height * scale)) * 0.5f;
-    DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
-
-    // Text
-    float TitleSize = HEIGHT * 0.03f;
-    float TitleY = HEIGHT * 0.12f;
-    float CreditSize = HEIGHT * 0.02f;
-
-    const char* title = "Problème des Missionnaires et des Cannibales";
-    float titleWidth = MeasureText(title, TitleSize);
+    float scale = (float)(WIDTH) / (float)(IntrobackgroundTexture.width);
+    float posX = (WIDTH - (IntrobackgroundTexture.width * scale)) * 0.5f;
+    float posY = (HEIGHT - (IntrobackgroundTexture.height * scale)) * 0.5f;
+    DrawTextureEx(IntrobackgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
     
-    DrawText(title, (WIDTH - titleWidth), TitleY, TitleSize, BLACK);
-
+    // Button properties
+    const int buttonWidth = 200;
+    const int buttonHeight = 60;
+    const int buttonGap = 50;  // Gap between buttons
+    const int fontSize = 24;
     
+    // Center buttons both horizontally and vertically
+    int pileButtonX = WIDTH/2 - buttonWidth - buttonGap/2;
+    int fileButtonX = WIDTH/2 + buttonGap/2;
+    int buttonY = HEIGHT/2 + 100;  // Move buttons down to center vertically
+    
+    // Draw "Pile" button
+    Rectangle pileButton = { pileButtonX, buttonY, buttonWidth, buttonHeight };
+    Color pileButtonColor = LIGHTGRAY;
+    Vector2 mousePos = GetMousePosition();
+    
+    if (CheckCollisionPointRec(mousePos, pileButton)) {
+        pileButtonColor = GRAY;  // Darker when hovered
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            gamePaused = 0;
+            current = STATE_PILE;
+        }
+    }
+    
+    DrawRectangleRec(pileButton, pileButtonColor);
+    DrawRectangleLinesEx(pileButton, 2, BLACK);  // Add border
+    DrawText("Pile", pileButtonX + buttonWidth/2 - MeasureText("Pile", fontSize)/2, 
+             buttonY + buttonHeight/2 - fontSize/2, fontSize, BLACK);
+    
+    // Draw "File" button
+    Rectangle fileButton = { fileButtonX, buttonY, buttonWidth, buttonHeight };
+    Color fileButtonColor = LIGHTGRAY;
+    
+    if (CheckCollisionPointRec(mousePos, fileButton)) {
+        fileButtonColor = GRAY;  // Darker when hovered
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            gamePaused = 0;
+            current = STATE_FILE;
+        }
+    }
+    
+    DrawRectangleRec(fileButton, fileButtonColor);
+    DrawRectangleLinesEx(fileButton, 2, BLACK);  // Add border
+    DrawText("File", fileButtonX + buttonWidth/2 - MeasureText("File", fontSize)/2, 
+             buttonY + buttonHeight/2 - fontSize/2, fontSize, BLACK);
 }
+
+void DrawGameControls() {
+    // Back button
+    Rectangle backButton = { 20, 20, 100, 40 };
+    Color backButtonColor = LIGHTGRAY;
+    Vector2 mousePos = GetMousePosition();
+    
+    if (CheckCollisionPointRec(mousePos, backButton)) {
+        backButtonColor = GRAY;  // Darker when hovered
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            current = STATE_INTRO;
+        }
+    }
+    
+    DrawRectangleRec(backButton, backButtonColor);
+    DrawRectangleLinesEx(backButton, 2, BLACK);
+    DrawText("Back", backButton.x + backButton.width/2 - MeasureText("Back", 20)/2,
+             backButton.y + backButton.height/2 - 10, 20, BLACK);
+    
+    // Play/Pause button
+    Rectangle pauseButton = { 140, 20, 100, 40 };
+    Color pauseButtonColor = LIGHTGRAY;
+    
+    if (CheckCollisionPointRec(mousePos, pauseButton)) {
+        pauseButtonColor = GRAY;
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            gamePaused = !gamePaused;
+        }
+    }
+    
+    DrawRectangleRec(pauseButton, pauseButtonColor);
+    DrawRectangleLinesEx(pauseButton, 2, BLACK);
+    DrawText(gamePaused ? "Play" : "Pause", 
+             pauseButton.x + pauseButton.width/2 - MeasureText(gamePaused ? "Play" : "Pause", 20)/2,
+             pauseButton.y + pauseButton.height/2 - 10, 20, BLACK);
+}
+
 int PileSize(Pile p, int size){
     if(p.p == NULL){
         return size;
@@ -265,46 +339,104 @@ void moveBoat() {
 }
 void FromStartToBoat(){
     if(PileSize(startPile, 0) > 0){
-        Pile *temp = startPile.prev;
+        // Sauvegarde l'élément du sommet
         Pile *movedPile = malloc(sizeof(Pile));
         *movedPile = startPile;
         movedPile->prev = NULL;
+
+        // Retire l'élément du sommet de startPile
+        if (startPile.prev == NULL) {
+            InitPile(&startPile);
+        } else {
+            startPile = *startPile.prev;
+        }
+
+        // Ajoute l'élément au sommet de onBoat
         if (onBoat.p == NULL) {
-            printf("1-------\n");
             onBoat.p = movedPile->p;
             onBoat.prev = movedPile->prev;
             free(movedPile);
         } else {
-            printf("2-------\n");
-            Pile *current = &onBoat;
-            while (current->prev != NULL) {
-                current = current->prev;
-            }
-            current->prev = movedPile;
+            Pile *oldTop = malloc(sizeof(Pile));
+            *oldTop = onBoat;
+
+            onBoat = *movedPile;
+            onBoat.prev = oldTop;
+            free(movedPile);
         }
-        startPile = *temp;
     }
 }
-void FromBoatToEnd(){
-    if(PileSize(onBoat, 0) > 0){
-        Pile *temp = onBoat.prev;
+// void FromStartToBoat(){
+//     if(PileSize(startPile, 0) > 0){
+//         Pile *temp = startPile.prev;
+//         Pile *movedPile = malloc(sizeof(Pile));
+//         *movedPile = startPile;
+//         movedPile->prev = NULL;
+//         if (onBoat.p == NULL) {
+//             printf("1-------\n");
+//             onBoat.p = movedPile->p;
+//             onBoat.prev = movedPile->prev;
+//             free(movedPile);
+//         } else {
+//             printf("2-------\n");
+//             Pile *current = &onBoat;
+//             while (current->prev != NULL) {
+//                 current = current->prev;
+//             }
+//             current->prev = movedPile;
+//         }
+//         startPile = *temp;
+//     }
+// }
+
+void FromBoatToEnd() {
+    if(PileSize(onBoat, 0) > 0) {
         Pile *movedPile = malloc(sizeof(Pile));
         *movedPile = onBoat;
         movedPile->prev = NULL;
 
-        // Ajouter l'élément à endPile
-        if (endPile.p == NULL) {
+        if(onBoat.prev == NULL) {
+            InitPile(&onBoat); 
+        } else {
+            onBoat = *onBoat.prev;
+        }
+
+        if(endPile.p == NULL) {
+            // endPile est vide : on met directement l'élément
             endPile.p = movedPile->p;
             endPile.prev = movedPile->prev;
             free(movedPile);
         } else {
-            movedPile->prev = endPile.prev;
-            endPile.prev = movedPile;
+            // endPile n'est pas vide : on empile au sommet
+            Pile *oldTop = malloc(sizeof(Pile));
+            *oldTop = endPile;
+            endPile = *movedPile; 
+            endPile.prev = oldTop;
+            free(movedPile);
         }
-
-        onBoat = *temp; // Mettre à jour onBoat
     }
 }
+// void FromBoatToEnd(){
+//     if(PileSize(onBoat, 0) > 0){
+//         Pile *temp = onBoat.prev;
+//         Pile *movedPile = malloc(sizeof(Pile));
+//         *movedPile = onBoat;
+//         movedPile->prev = NULL;
+
+//         // Ajouter l'élément à endPile
+//         if (endPile.p == NULL) {
+//             endPile.p = movedPile->p;
+//             endPile.prev = movedPile->prev;
+//             free(movedPile);
+//         } else {
+//             movedPile->prev = endPile.prev;
+//             endPile.prev = movedPile;
+//         }
+
+//         onBoat = *temp; // Mettre à jour onBoat
+//     }
+// }
+
 void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
     Pile *currentOnBoat = &onBoat; //Take pointer for set modifications out of the fonction
     if(currentOnBoat != NULL) {
@@ -320,10 +452,10 @@ void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
     }
 }
 void updatePlayersPositonsInBoat(){
-    boatPosition[0].x = boat.position.x + 110;
-    boatPosition[0].y = boat.position.y - 110;
-    boatPosition[1].x = boat.position.x + 50;
-    boatPosition[1].y = boat.position.y - 110;
+    boatPosition[0].x = boat.position.x + 75;
+    boatPosition[0].y = boat.position.y - 100;
+    boatPosition[1].x = boat.position.x + 25;
+    boatPosition[1].y = boat.position.y - 100;
 }
 void game(){
     if(boat.location == 0){
@@ -359,8 +491,12 @@ void game(){
                 FromStartToBoat();
             }
         }
-    }else{ //boat at end
-        printf("on move : %d\n", onBoat.p->onMove);
+    } else { // boat at end
+        if (onBoat.p != NULL) {
+            printf("on move : %d\n", onBoat.p->onMove);
+        } else {
+            printf("onBoat is empty\n");
+        }
         printf("at end : %d\n", PileSize(endPile, 0));
         if(!movePlayers()){
             printf("end ----- %d\n", PileSize(onBoat, 0));
@@ -404,27 +540,37 @@ int main(void)
     LoadGameTextures();
     SetTargetFPS(120);
 
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()){
         BeginDrawing();
 
         switch(current) {
             case STATE_INTRO:
+                ClearBackground(BLACK);
                 DrawIntro();
                 break;
             case STATE_PILE:
                 ClearBackground(BLACK);
-                
+                    
                 float scale = (float)(WIDTH) / (float)(backgroundTexture.width);
                 float posX = (WIDTH - (backgroundTexture.width * scale)) * 0.5f;
                 float posY = (HEIGHT - (backgroundTexture.height * scale)) * 0.5f;
-                
+                    
                 DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
-            }
-            PrintEntities();
-            game();
-            EndDrawing();
+                PrintEntities();
+
+                if (!gamePaused) {
+                    game();
+                }
+                
+                DrawGameControls();
+                break;
+            case STATE_FILE:
+                ClearBackground(BLACK);
+                DrawGameControls();
+                break;
         }
+        EndDrawing();
+    }
 
     UnloadGameTextures();
     CloseWindow();
