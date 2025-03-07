@@ -52,4 +52,7 @@ Boat boat;
 //array
 Player *players[6];
 
+//Location of player in boat
+Vector2 boatPosition[2];
+
 #endif

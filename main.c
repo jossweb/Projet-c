@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include "pile.h"
 #include "common.h"
-
-//Location of player in boat
-Vector2 boatPosition[2];
+#include "file.h"
 
 void LoadGameTextures() {
     missionaryTexture = LoadTexture("assets/missionnaire.png");
@@ -396,6 +394,16 @@ void game(){
         }
     }
 }
+void test(){
+    InitFile(&startFile);
+    printf("------end Init 1\n");
+    InitFileStart(players);
+    printf("------end Init 2\n");
+    PrintFileTypes(startFile);
+    printf("------end printing\n");
+    printf("File size : %d\n", FileSize(startFile, 0));
+    printf("------end");
+}
 int main(void)
 {
     InitEntites();
@@ -406,7 +414,9 @@ int main(void)
 
     while (!WindowShouldClose()){
         BeginDrawing();
-
+        float scale = (float)(WIDTH) / (float)(backgroundTexture.width);
+        float posX = (WIDTH - (backgroundTexture.width * scale)) * 0.5f;
+        float posY = (HEIGHT - (backgroundTexture.height * scale)) * 0.5f;
         switch(current) {
             case STATE_INTRO:
                 ClearBackground(BLACK);
@@ -414,11 +424,6 @@ int main(void)
                 break;
             case STATE_PILE:
                 ClearBackground(BLACK);
-                    
-                float scale = (float)(WIDTH) / (float)(backgroundTexture.width);
-                float posX = (WIDTH - (backgroundTexture.width * scale)) * 0.5f;
-                float posY = (HEIGHT - (backgroundTexture.height * scale)) * 0.5f;
-                    
                 DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
                 PrintEntities();
 
@@ -430,6 +435,16 @@ int main(void)
                 break;
             case STATE_FILE:
                 ClearBackground(BLACK);
+                    
+                DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
+                PrintEntities();
+
+                /*
+                if (!gamePaused) {
+                    game();
+                }*/
+                test();
+                gamePaused = 1;
                 DrawGameControls();
                 break;
         }

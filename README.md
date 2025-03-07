@@ -29,6 +29,6 @@ sudo make install
 ## Exécution du projet
 
 ```bash
-cc main.c -o main $(pkg-config --libs --cflags raylib)
+cc main.c pile.c file.c common.c -o main $(pkg-config --libs --cflags raylib)
 ./main
 ```
