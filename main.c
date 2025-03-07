@@ -2,66 +2,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define WIDTH 1400
-#define HEIGHT 850
-#define PLAYERSCALE 0.35f
-#define BOATSTARTX 725
-
-
-typedef enum {
-    STATE_INTRO,
-    STATE_PILE,
-    STATE_FILE
-} GameState;
-
-// Global textures
-Texture2D missionaryTexture;
-Texture2D cannibalTexture;
-Texture2D boatTexture;
-Texture2D IntrobackgroundTexture;
-Texture2D backgroundTexture;
-GameState current = STATE_INTRO;
-int gamePaused = 0;
-
-
-struct Player{
-    Vector2 position;
-    int type; // 0 = missionary; 1 = cannibal
-    Vector2 destination;
-    int onMove; // 0 = not moving; 1 = moving
-};
-typedef struct Player Player;
-
-struct Pile {
-    Player *p;
-    struct Pile *prev;
-};
-typedef struct Pile Pile;
-
-struct Boat {
-    Vector2 position;
-    int location; // 0 = moving; 1 = start; 2 = end
-    Vector2 destination;
-};
-typedef struct Boat Boat;
-
-//global entities
-Player human1;
-Player human2;
-Player human3;
-Player canibal1;
-Player canibal2;
-Player canibal3;
-Boat boat;
-
-//piles
-Pile startPile;
-Pile onBoat;
-Pile endPile;
-
-//array
-Player *players[6];
+#include "pile.h"
+#include "common.h"
 
 //Location of player in boat
 Vector2 boatPosition[2];
@@ -208,20 +150,6 @@ void DrawGameControls() {
              pauseButton.x + pauseButton.width/2 - MeasureText(gamePaused ? "Play" : "Pause", 20)/2,
              pauseButton.y + pauseButton.height/2 - 10, 20, BLACK);
 }
-
-int PileSize(Pile p, int size){
-    if(p.p == NULL){
-        return size;
-    }
-    if(p.prev == NULL) {
-        return size + 1;
-    }
-    return PileSize(*p.prev, size + 1);
-}
-void InitPile(Pile *p){
-    p->p= NULL;
-    p->prev = NULL;
-}
 void PrintEntities(){
     // Create players
     printPlayer(human1, PLAYERSCALE);
@@ -235,31 +163,6 @@ void PrintEntities(){
 
     // Create boat and print it
     printBoat(boat, PLAYERSCALE);
-}
-void InitStartPile(Player *players[]) {
-    Pile *current = &startPile;
-    for (int i = 0; i < 6; i++) {
-        current->p = players[i];
-        if (i < 5) {
-            current->prev = malloc(sizeof(Pile));
-            current = current->prev;
-        } else {
-            current->prev = NULL;
-        }
-    }
-}
-
-void PrintPileTypes(Pile p) {
-    if(p.p == NULL) {
-        printf("Pile is empty\n");
-        return;
-    }
-    
-    printf("Player type: %d\n", p.p->type);
-    
-    if(p.prev != NULL) {
-        PrintPileTypes(*p.prev);
-    }
 }
 void InitEntites(){
     human1 = createplayer(0, 1250, 400);
@@ -366,29 +269,6 @@ void FromStartToBoat(){
         }
     }
 }
-// void FromStartToBoat(){
-//     if(PileSize(startPile, 0) > 0){
-//         Pile *temp = startPile.prev;
-//         Pile *movedPile = malloc(sizeof(Pile));
-//         *movedPile = startPile;
-//         movedPile->prev = NULL;
-//         if (onBoat.p == NULL) {
-//             printf("1-------\n");
-//             onBoat.p = movedPile->p;
-//             onBoat.prev = movedPile->prev;
-//             free(movedPile);
-//         } else {
-//             printf("2-------\n");
-//             Pile *current = &onBoat;
-//             while (current->prev != NULL) {
-//                 current = current->prev;
-//             }
-//             current->prev = movedPile;
-//         }
-//         startPile = *temp;
-//     }
-// }
-
 void FromBoatToEnd() {
     if(PileSize(onBoat, 0) > 0) {
         Pile *movedPile = malloc(sizeof(Pile));
@@ -416,27 +296,6 @@ void FromBoatToEnd() {
         }
     }
 }
-// void FromBoatToEnd(){
-//     if(PileSize(onBoat, 0) > 0){
-//         Pile *temp = onBoat.prev;
-//         Pile *movedPile = malloc(sizeof(Pile));
-//         *movedPile = onBoat;
-//         movedPile->prev = NULL;
-
-//         // Ajouter l'élément à endPile
-//         if (endPile.p == NULL) {
-//             endPile.p = movedPile->p;
-//             endPile.prev = movedPile->prev;
-//             free(movedPile);
-//         } else {
-//             movedPile->prev = endPile.prev;
-//             endPile.prev = movedPile;
-//         }
-
-//         onBoat = *temp; // Mettre à jour onBoat
-//     }
-// }
-
 void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
     Pile *currentOnBoat = &onBoat; //Take pointer for set modifications out of the fonction
     if(currentOnBoat != NULL) {
