@@ -31,6 +31,7 @@ void InitFileStart(Player *players[]) {
         lastElement->prev = malloc(sizeof(File));
         lastElement = lastElement->prev;
         lastElement->p = players[i];
+        lastElement->prev = NULL;
     }
 }
 void PrintFileTypes(File f) {
@@ -42,5 +43,7 @@ void PrintFileTypes(File f) {
     
     if(f.prev != NULL) {
         PrintFileTypes(*f.prev);
+    } else {
+        printf("Fin de la File\n");
     }
 }
