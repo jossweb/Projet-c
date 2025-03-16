@@ -22,4 +22,5 @@ Player GetLastPlayerInPile(File f);
 void InitFileStart(Player *players[]);
 void PrintFileTypes(File f);
 void BoatToWaiting(int boatSize);
+File GetLast(File f);
 #endif

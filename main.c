@@ -461,25 +461,14 @@ void game() {
             }
         }
     } else {
-        if (current == STATE_PILE) {
-            if (!onBoat.p) printf("Pile on move: %d\n", onBoat.p->onMove);
-            else printf("onBoat is empty\n");
-            printf("Pile at end: %d\n", PileSize(endPile, 0));
-        } else {
-            if (onBoatFile.p != NULL) printf("File on move: %d\n", onBoatFile.p->onMove);
-            else printf("onBoatFile is empty\n");
-            printf("File at end: %d\n", FileSize(endFile, 0));
-        }
-        
         if(!movePlayers()) {
             int boatSize = (current == STATE_PILE) ? PileSize(onBoat, 0) : FileSize(onBoatFile, 0);
             int startSize = (current == STATE_PILE) ? PileSize(startPile, 0) : FileSize(startFile, 0);
             int endSize = (current == STATE_PILE) ? PileSize(endPile, 0) : FileSize(endFile, 0);
-        
             if(boatSize == 2) {
                 Vector2 finalDestination;
                 if(!endSize) {
-                    finalDestination.x = -20;
+                    finalDestination.x = 0;
                     finalDestination.y = 350;
                 } else {
                     if (current == STATE_PILE) {
@@ -490,32 +479,25 @@ void game() {
                             finalDestination.x += 30;
                         }
                     } else {
-                        finalDestination = endFile.p->position;
+                        finalDestination = GetLast(endFile).p->position;
                         if(endFile.p->type == 0) {
-                            finalDestination.x += 110;
+                            finalDestination.x += 80;
                         } else { 
-                            finalDestination.x += 30;
+                            finalDestination.x += 70;
                         }
                     }
                 }
-                
                 if (current == STATE_PILE) {
                     Player* playerToMove = onBoat.p;
                     FromBoatToEnd();
                     endPile.p->onMove = 1;
                     endPile.p->destination = finalDestination;
+                    printf("Deplacement du joueur de type: %d du bateau a la fin\n", endPile.p->type);
                 } else {
-                    printf("HERE ------------------------------------\n");
                     Player* lastPlayer = onBoatFile.p;
                     FromBoatToEnd();
                     File lastElement;
-                    lastElement = endFile;
-                    while(lastElement.prev){
-                        if(lastElement.prev){
-                            lastElement = *lastElement.prev;
-                        }
-                    }
-                    printf("%d ------------------------------------\n", lastElement.p->type);
+                    lastElement = GetLast(endFile);
                     lastElement.p->onMove = 1;
                     lastElement.p->destination = finalDestination;
                 }
@@ -529,23 +511,18 @@ void game() {
                         FromBoatToEnd();
                         endPile.p->onMove = 1;
                         endPile.p->destination = finalDestination;
+                        printf("Deplacement du joueur de type: %d du bateau a la fin\n", endPile.p->type);
                     } else {
-                        printf("HERE ------------------------------------\n");
                         Player* lastPlayer = onBoatFile.p;
                         FromBoatToEnd();
                         File lastElement;
-                        lastElement = endFile;
-                        while(lastElement.prev){
-                            if(lastElement.prev){
-                                lastElement = *lastElement.prev;
-                            }
-                        }
-                        printf("%d ------------------------------------\n", lastElement.p->type);
+                        lastElement = GetLast(endFile);
                         lastElement.p->onMove = 1;
                         lastElement.p->destination = finalDestination;
                     }
                 }
             } else if(boatSize == 1) {
+                printf("retour lobby\n");
                 if ((current == STATE_PILE && startPile.p) || 
                     (current == STATE_FILE && startFile.p)) {
                     boat.location = 0;
@@ -566,23 +543,13 @@ void game() {
         }
     }
 }
-// void test(){
-//     InitFile(&startFile);
-//     printf("------end Init 1\n");
-//     InitFileStart(players);
-//     printf("------end Init 2\n");
-//     PrintFileTypes(startFile);
-//     printf("------end printing\n");
-//     printf("File size : %d\n", FileSize(startFile, 0));
-//     printf("------end");
-// }
 int main(void)
 {
     InitEntites();
     InitWindow(WIDTH, HEIGHT, "Projet C par Rémy.M et Jossua.F");
     
     LoadGameTextures();
-    SetTargetFPS(120);
+    SetTargetFPS(500);
 
     GameState previousState = STATE_INTRO;
 
@@ -614,20 +581,6 @@ int main(void)
                 
                 DrawGameControls();
                 break;
-        //     case STATE_FILE:
-        //         ClearBackground(BLACK);
-                    
-        //         DrawTextureEx(backgroundTexture, (Vector2){posX, posY}, 0.0f, scale, WHITE);
-        //         PrintEntities();
-
-        //         /*
-        //         if (!gamePaused) {
-        //             game();
-        //         }*/
-        //         test();
-        //         gamePaused = 1;
-        //         DrawGameControls();
-        //         break;
         }
         EndDrawing();
     }

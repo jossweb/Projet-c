@@ -4,7 +4,7 @@
 #include "raylib.h" 
 #include "common.h"
 
-const Vector2 WAITINGPOSITION = {500, 550};
+const Vector2 WAITINGPOSITION = {1000, 500};
 
 int FileSize(File f, int size){
     if(!f.p ){
@@ -56,4 +56,10 @@ void BoatToWaiting(int boatSize){
         waitingPlayer = onBoatFile.p;
         onBoatFile.p = NULL;
     }
+}
+File GetLast(File f){
+    if(!f.prev){
+        return f;
+    }
+    return GetLast(*f.prev);
 }
