@@ -4,6 +4,8 @@
 #include "raylib.h" 
 #include "common.h"
 
+const Vector2 WAITINGPOSITION = {150, 550};
+
 int FileSize(File f, int size){
     if(!f.p ){
         return size;
@@ -45,5 +47,13 @@ void PrintFileTypes(File f) {
         PrintFileTypes(*f.prev);
     } else {
         printf("Fin de la File\n");
+    }
+}
+void BoatToWaiting(int boatSize){
+    if(boatSize){
+        onBoatFile.p->onMove = 1;
+        onBoatFile.p->destination = WAITINGPOSITION;
+        waitingPlayer = onBoatFile.p;
+        onBoatFile.p = NULL;
     }
 }

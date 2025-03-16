@@ -322,12 +322,12 @@ void FromBoatToEnd() {
             }
 
             if(endPile.p == NULL) {
-                // endPile est vide : on met directement l'élément
+                // endPile empty
                 endPile.p = movedPile->p;
                 endPile.prev = movedPile->prev;
                 free(movedPile);
             } else {
-                // endPile n'est pas vide : on empile au sommet
+                // endPile isn't empty: add the element to the end
                 Pile *oldTop = malloc(sizeof(Pile));
                 *oldTop = endPile;
                 endPile = *movedPile; 
@@ -432,7 +432,7 @@ void game() {
                 }
             }
             
-            if((startSize < 6) && (boatSize == 1)) {
+            if((startSize < 6) && (boatSize <= 1)) {
                 updatePlayersPositonsInBoat();
                 if(current == STATE_PILE) {
                     startPile.p->onMove = 1;
@@ -440,10 +440,23 @@ void game() {
                     FromStartToBoat();
                 } else if (startFile.p != NULL) {
                     // For FILE: Use each element in sequence
-                    Player* playerToMove = startFile.p;
-                    playerToMove->onMove = 1;
-                    playerToMove->destination = boatPosition[1];
-                    FromStartToBoat();
+                    if(waitingPlayer){
+                        Player* playerToMove = startFile.p;
+                        playerToMove->onMove = 1;
+                        playerToMove->destination = boatPosition[1];
+                        FromStartToBoat();
+                        File *toBoat = malloc(sizeof(File));
+                        toBoat->p = waitingPlayer;
+                        toBoat->prev = NULL;
+                        toBoat->p->onMove = 1;
+                        toBoat->p->destination = boatPosition[0];
+                        onBoatFile.prev = toBoat;
+                        waitingPlayer = NULL;
+                    }
+                    else{
+                        BoatToWaiting(boatSize);
+                    }
+
                 }
             }
         }
