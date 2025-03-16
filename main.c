@@ -462,7 +462,7 @@ void game() {
         }
     } else {
         if (current == STATE_PILE) {
-            if (onBoat.p != NULL) printf("Pile on move: %d\n", onBoat.p->onMove);
+            if (!onBoat.p) printf("Pile on move: %d\n", onBoat.p->onMove);
             else printf("onBoat is empty\n");
             printf("Pile at end: %d\n", PileSize(endPile, 0));
         } else {
@@ -475,8 +475,7 @@ void game() {
             int boatSize = (current == STATE_PILE) ? PileSize(onBoat, 0) : FileSize(onBoatFile, 0);
             int startSize = (current == STATE_PILE) ? PileSize(startPile, 0) : FileSize(startFile, 0);
             int endSize = (current == STATE_PILE) ? PileSize(endPile, 0) : FileSize(endFile, 0);
-            
-            printf("end ----- %d\n", boatSize);
+        
             if(boatSize == 2) {
                 Vector2 finalDestination;
                 if(!endSize) {
@@ -506,10 +505,19 @@ void game() {
                     endPile.p->onMove = 1;
                     endPile.p->destination = finalDestination;
                 } else {
-                    Player* playerToMove = onBoatFile.p;
+                    printf("HERE ------------------------------------\n");
+                    Player* lastPlayer = onBoatFile.p;
                     FromBoatToEnd();
-                    endFile.p->onMove = 1;
-                    endFile.p->destination = finalDestination;
+                    File lastElement;
+                    lastElement = endFile;
+                    while(lastElement.prev){
+                        if(lastElement.prev){
+                            lastElement = *lastElement.prev;
+                        }
+                    }
+                    printf("%d ------------------------------------\n", lastElement.p->type);
+                    lastElement.p->onMove = 1;
+                    lastElement.p->destination = finalDestination;
                 }
                 
                 if(!startSize) {
@@ -522,10 +530,19 @@ void game() {
                         endPile.p->onMove = 1;
                         endPile.p->destination = finalDestination;
                     } else {
+                        printf("HERE ------------------------------------\n");
                         Player* lastPlayer = onBoatFile.p;
                         FromBoatToEnd();
-                        endFile.p->onMove = 1;
-                        endFile.p->destination = finalDestination;
+                        File lastElement;
+                        lastElement = endFile;
+                        while(lastElement.prev){
+                            if(lastElement.prev){
+                                lastElement = *lastElement.prev;
+                            }
+                        }
+                        printf("%d ------------------------------------\n", lastElement.p->type);
+                        lastElement.p->onMove = 1;
+                        lastElement.p->destination = finalDestination;
                     }
                 }
             } else if(boatSize == 1) {

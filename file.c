@@ -4,7 +4,7 @@
 #include "raylib.h" 
 #include "common.h"
 
-const Vector2 WAITINGPOSITION = {150, 550};
+const Vector2 WAITINGPOSITION = {500, 550};
 
 int FileSize(File f, int size){
     if(!f.p ){
@@ -32,7 +32,7 @@ void InitFileStart(Player *players[]) {
     for (int i = 1; i < 6; i++) {
         lastElement->prev = malloc(sizeof(File));
         lastElement = lastElement->prev;
-        lastElement->p = players[i];
+        lastElement->p = players[6-i];
         lastElement->prev = NULL;
     }
 }
