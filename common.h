@@ -21,9 +21,16 @@ Texture2D cannibalTexture;
 Texture2D boatTexture;
 Texture2D IntrobackgroundTexture;
 Texture2D backgroundTexture;
+Texture2D missionarySeatedTexture;
+Texture2D cannibalSeatedTexture;
 //here we use extern term for have global variable only one time in the program
+
 extern GameState current;
 extern int gamePaused;
+extern float animationSpeedMultiplier;
+extern Rectangle speedSlider;
+extern int sliderActive;
+
 
 struct Player{
     Vector2 position;

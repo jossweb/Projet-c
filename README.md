@@ -1,5 +1,4 @@
-# Projet-c
-Problème des missionnaires et des cannibales
+![Problème des missionnaires et des cannibales](assets/banner.svg)
 
 ## Télécharger raylib sous MacOS(Intel/Apple silicon)
 prérequis : avoir brew d'installé
@@ -32,3 +31,9 @@ sudo make install
 cc main.c pile.c file.c common.c -o main $(pkg-config --libs --cflags raylib)
 ./main
 ```
+
+# et sous windows 
+
+ C:/msys64/mingw64/bin/gcc.exe -fdiagnostics-color=always -g main.c file.c pile.c file.h pile.h common.c common.h -o main.exe -I C:/msys64/mingw64/include -L C:/msys64/mingw64/lib -lraylib -lopengl32 -lgdi32 -lwinmm -fcommon
+
+ (je suis oblige de mettre le .h sinon le compilateur ne compile pas)

@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,12 +7,38 @@
 #include "common.h"
 #include "file.h"
 
+
+// prototype pour éviter tout problème 
+void LoadGameTextures();
+void UnloadGameTextures();
+Player createplayer(int type, int x, int y);
+void printPlayer(Player p, float scale);
+Boat InitBoat();
+void printBoat(Boat b, float scale);
+void DrawIntro();
+void DrawSpeedSlider();
+void DrawGameControls();
+void PrintEntities();
+void InitEntites();
+int movePlayers();
+void moveBoat();
+void FromStartToBoat();
+void FromBoatToEnd();
+void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2);
+void updatePlayersPositonsInBoat();
+void game();
+void BoatToWaiting(int boatSize);
+File GetLast(File file);  
+
 void LoadGameTextures() {
     missionaryTexture = LoadTexture("assets/missionnaire.png");
     cannibalTexture = LoadTexture("assets/cannibale.png");
     boatTexture = LoadTexture("assets/bateau.png");
     IntrobackgroundTexture = LoadTexture("assets/intro.png");
     backgroundTexture = LoadTexture("assets/fond.png");
+    // nouvelle texture assis
+    missionarySeatedTexture = LoadTexture("assets/missionnaire_a.png");
+    cannibalSeatedTexture = LoadTexture("assets/cannibale_a.png");
 }
 
 void UnloadGameTextures() {
@@ -19,8 +46,10 @@ void UnloadGameTextures() {
     UnloadTexture(cannibalTexture);
     UnloadTexture(boatTexture);
     UnloadTexture(backgroundTexture);
+    UnloadTexture(IntrobackgroundTexture);
+    UnloadTexture(missionarySeatedTexture);
+    UnloadTexture(cannibalSeatedTexture);
 }
-
 Player createplayer(int type, int x, int y){
     Player p;
     p.position.x = x;
@@ -31,8 +60,22 @@ Player createplayer(int type, int x, int y){
     return p;
 }
 
-void printPlayer(Player p, float scale){
-    Texture2D *texture = (p.type == 0) ? &missionaryTexture : &cannibalTexture;
+void printPlayer(Player p, float scale) {
+    Texture2D *texture;
+    
+    int isInBoat = 1;
+    
+    // Vérifiez par rapport aux positions dans le bateau
+    isInBoat = (p.position.x >= boat.position.x && p.position.x <= boat.position.x + 250 &&
+                p.position.y >= boat.position.y - 130 && p.position.y <= boat.position.y - 60);
+    
+    //changement de texture
+    if (isInBoat) {
+        texture = (p.type == 0) ? &missionarySeatedTexture : &cannibalSeatedTexture;
+    } else {
+        texture = (p.type == 0) ? &missionaryTexture : &cannibalTexture;
+    }
+    
     DrawTextureEx(*texture, (Vector2){p.position.x, p.position.y}, 0.0f, scale, WHITE);
 }
 
@@ -113,6 +156,41 @@ void DrawIntro() {
              buttonY + buttonHeight/2 - fontSize/2, fontSize, BLACK);
 }
 
+void DrawSpeedSlider() {
+    DrawText("Vitesse :", WIDTH - 300, HEIGHT - 70, 20, WHITE);
+    
+    if (speedSlider.width == 0) {
+        speedSlider = (Rectangle){ WIDTH - 300, HEIGHT - 40, 200, 20 };
+    }
+    
+    DrawRectangleRec(speedSlider, LIGHTGRAY);
+    DrawRectangleLinesEx(speedSlider, 1, DARKGRAY);
+    
+    float knobX = speedSlider.x + (animationSpeedMultiplier - 0.5f) * (speedSlider.width / 39.5f);
+    Rectangle knob = { knobX - 5, speedSlider.y - 5, 10, speedSlider.height + 10 };
+    
+    Vector2 mousePos = GetMousePosition();
+    if (CheckCollisionPointRec(mousePos, knob) && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        sliderActive = 1;
+    }
+    
+    if (sliderActive) {
+        if (IsMouseButtonUp(MOUSE_LEFT_BUTTON)) {
+            sliderActive = 0;
+        } else {
+            float relativePos = (mousePos.x - speedSlider.x) / speedSlider.width;
+            relativePos = Clamp(relativePos, 0.0f, 1.0f);
+            animationSpeedMultiplier = 0.5f + relativePos * 39.5f; // RANGE 0.5 - 40
+        }
+    }
+    
+    DrawRectangleRec(knob, sliderActive ? RED : MAROON);
+    
+    char speedText[32];
+    sprintf(speedText, "%.1fx", animationSpeedMultiplier);
+    DrawText(speedText, WIDTH - 80, HEIGHT - 70, 20, WHITE);
+}
+
 void DrawGameControls() {
     // Back button
     Rectangle backButton = { 20, 20, 100, 40 };
@@ -128,7 +206,7 @@ void DrawGameControls() {
     
     DrawRectangleRec(backButton, backButtonColor);
     DrawRectangleLinesEx(backButton, 2, BLACK);
-    DrawText("Back", backButton.x + backButton.width/2 - MeasureText("Back", 20)/2,
+    DrawText("Retour", backButton.x + backButton.width/2 - MeasureText("Retour", 20)/2,
              backButton.y + backButton.height/2 - 10, 20, BLACK);
     
     // Play/Pause button
@@ -147,6 +225,26 @@ void DrawGameControls() {
     DrawText(gamePaused ? "Play" : "Pause", 
              pauseButton.x + pauseButton.width/2 - MeasureText(gamePaused ? "Play" : "Pause", 20)/2,
              pauseButton.y + pauseButton.height/2 - 10, 20, BLACK);
+    
+             // Reset button
+    Rectangle resetButton = { 260, 20, 100, 40 };
+    Color resetButtonColor = LIGHTGRAY;
+    
+    if (CheckCollisionPointRec(mousePos, resetButton)) {
+        resetButtonColor = GRAY;
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            InitEntites();
+            gamePaused = 0;
+        }
+    }
+    
+    DrawRectangleRec(resetButton, resetButtonColor);
+    DrawRectangleLinesEx(resetButton, 2, BLACK);
+    DrawText("Reset", resetButton.x + resetButton.width/2 - MeasureText("Reset", 20)/2,
+             resetButton.y + resetButton.height/2 - 10, 20, BLACK);
+    
+    //  Slider Speed
+    DrawSpeedSlider();
 
     char currentModeText[50];
     sprintf(currentModeText, "Mode: %s", current == STATE_PILE ? "PILE" : "FILE");
@@ -203,8 +301,9 @@ void InitEntites(){
     boat = InitBoat();
     InitPile(&onBoat);
 }
+
 int movePlayers() {
-    int moved = 0; // 0 = no player moved; 1 = 1 player (or more) moved
+    int moved = 0; 
     for (int i = 0; i < 6; i++) {
         Player *p = players[i];
         if (p->onMove) {
@@ -220,15 +319,24 @@ int movePlayers() {
             } else {
                 direction.x /= distance;
                 direction.y /= distance;
-                const float speed = 2.0f; 
-                p->position.x += direction.x * speed;
-                p->position.y += direction.y * speed;
+                const float baseSpeed = 2.0f; 
+                float speed = baseSpeed * animationSpeedMultiplier;
+                
+                if (speed >= distance) {
+                    p->position = p->destination;
+                    p->onMove = 0;
+                } else {
+                    // Normal
+                    p->position.x += direction.x * speed;
+                    p->position.y += direction.y * speed;
+                }
                 moved = 1;
             }
         }
     }
     return moved;
 }
+
 void moveBoat() {
     if (boat.location == 0){
         Vector2 direction = {
@@ -247,12 +355,25 @@ void moveBoat() {
         } else {
             direction.x /= distance;
             direction.y /= distance;
-            const float speed = 2.0f; 
-            boat.position.x += direction.x * speed;
-            boat.position.y += direction.y * speed;
+            const float baseSpeed = 2.0f; 
+            float speed = baseSpeed * animationSpeedMultiplier;
+            
+            if (speed >= distance) {
+                boat.position = boat.destination;
+                if(boat.destination.x == BOATSTARTX){
+                    boat.location = 1;
+                } else {
+                    boat.location = 3;
+                }
+            } else {
+                // Normal
+                boat.position.x += direction.x * speed;
+                boat.position.y += direction.y * speed;
+            }
         }
     }
 }
+
 void FromStartToBoat(){
     if (current == STATE_PILE) {
         if(PileSize(startPile, 0) > 0){
@@ -386,12 +507,15 @@ void SetDestinationToPlayerOnBoat(Vector2 destinationP1, Vector2 destinationP2){
         }
     }
 }
+
+
 void updatePlayersPositonsInBoat(){
-    boatPosition[0].x = boat.position.x + 50;
-    boatPosition[0].y = boat.position.y - 110;
-    boatPosition[1].x = boat.position.x + 150;
-    boatPosition[1].y = boat.position.y - 110;
+    boatPosition[0].x = boat.position.x + 55;
+    boatPosition[0].y = boat.position.y - 60;
+    boatPosition[1].x = boat.position.x + 140;
+    boatPosition[1].y = boat.position.y - 60;
 }
+
 void game() {
     if(boat.location == 0) {
         moveBoat();
@@ -408,8 +532,8 @@ void game() {
                 boat.location = 0;
                 boat.destination.x = 400;
                 boat.destination.y = 450;
-                Vector2 destinationP1 = {boat.destination.x + 50, boat.position.y - 110};
-                Vector2 destinationP2 = {boat.destination.x + 150, boat.position.y - 110};
+                Vector2 destinationP1 = {boat.destination.x + 50, boat.position.y - 60};
+                Vector2 destinationP2 = {boat.destination.x + 150, boat.position.y - 60};
                 SetDestinationToPlayerOnBoat(destinationP2, destinationP1);
             }
             
@@ -531,11 +655,11 @@ void game() {
                     
                     if (current == STATE_PILE) {
                         onBoat.p->onMove = 1;
-                        Vector2 destination = {boat.destination.x + 100, boat.position.y - 110};
+                        Vector2 destination = {boat.destination.x + 100, boat.position.y - 60};
                         onBoat.p->destination = destination;
                     } else {
                         onBoatFile.p->onMove = 1;
-                        Vector2 destination = {boat.destination.x + 100, boat.position.y - 110};
+                        Vector2 destination = {boat.destination.x + 100, boat.position.y - 60};
                         onBoatFile.p->destination = destination;
                     }
                 }
@@ -549,7 +673,7 @@ int main(void)
     InitWindow(WIDTH, HEIGHT, "Projet C par Rémy.M et Jossua.F");
     
     LoadGameTextures();
-    SetTargetFPS(500);
+    SetTargetFPS(60);
 
     GameState previousState = STATE_INTRO;
 
