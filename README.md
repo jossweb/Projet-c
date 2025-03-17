@@ -29,7 +29,7 @@ make PLATFORM=PLATFORM_DESKTOP
 sudo make install
 ```
 
-# Télécharger raylib sous Windows (10/11)
+## Télécharger raylib sous Windows (10/11)
 
 * met le tuto ici
 
