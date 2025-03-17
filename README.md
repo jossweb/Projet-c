@@ -6,10 +6,14 @@ prérequis : avoir brew d'installé
 ```bash
 brew install raylib
 ```
+Optionnel : Installer pkg-config (pour simplifier l'utilisation des flags à la compilation)
+```bash
+brew install pkg-config
+```
 
 ## Télécharger et build raylib sous linux
 
-prérequis : /
+prérequis :
 ```bash
 sudo apt install build-essential git libasound2-dev libx11-dev libxrandr-dev libxi-dev \
      libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev \
@@ -25,15 +29,34 @@ make PLATFORM=PLATFORM_DESKTOP
 sudo make install
 ```
 
-## Exécution du projet
+# Télécharger raylib sous Windows (10/11)
 
+* met le tuto ici
+
+ C:/msys64/mingw64/bin/gcc.exe -fdiagnostics-color=always -g main.c file.c pile.c file.h pile.h common.c common.h -o main.exe -I C:/msys64/mingw64/include -L C:/msys64/mingw64/lib -lraylib -lopengl32 -lgdi32 -lwinmm -fcommon
+
+ ## Exécution du projet
+
+ ### Macos
 ```bash
 cc main.c pile.c file.c common.c -o main $(pkg-config --libs --cflags raylib)
 ./main
 ```
+### Linux
+```bash
+     -------a toi de jouer
+```
+### Windows
+```bash
+     -------a toi de jouer
+```
+## Démonstration
 
-# et sous windows 
+### Accueil 
+![Capture d'écran de l'accueil de l'app](assets/main.png)
 
- C:/msys64/mingw64/bin/gcc.exe -fdiagnostics-color=always -g main.c file.c pile.c file.h pile.h common.c common.h -o main.exe -I C:/msys64/mingw64/include -L C:/msys64/mingw64/lib -lraylib -lopengl32 -lgdi32 -lwinmm -fcommon
+### Exécution Pile
+![Enregistrement Pile](assets/PILE.gif)
 
- (je suis oblige de mettre le .h sinon le compilateur ne compile pas)
+### Exécution File 
+![Enregistrement File](assets/FILE.gif)
