@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 Jossua, Rémy
+Copyright (c) 2025 FIGUEIRAS Jossua, MAUBERT Rémy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
