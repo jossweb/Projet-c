@@ -7,6 +7,9 @@
 - [Démonstration](#démonstration)
 - [Crédits et licence](#crédits-et-licence)
 
+### démo en ligne
+- [Accès à la démo en ligne (redirection)](https://remyweb.fr/missionnaires-cannibales/)
+
 
 ## Introduction
 
