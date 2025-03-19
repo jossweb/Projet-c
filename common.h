@@ -23,7 +23,6 @@ Texture2D IntrobackgroundTexture;
 Texture2D backgroundTexture;
 Texture2D missionarySeatedTexture;
 Texture2D cannibalSeatedTexture;
-//here we use extern term for have global variable only one time in the program
 
 extern GameState current;
 extern int gamePaused;

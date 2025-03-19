@@ -7,8 +7,6 @@
 #include "common.h"
 #include "file.h"
 
-
-// prototype pour éviter tout problème 
 void LoadGameTextures();
 void UnloadGameTextures();
 Player createplayer(int type, int x, int y);
@@ -65,7 +63,7 @@ void printPlayer(Player p, float scale) {
     
     int isInBoat = 1;
     
-    // Vérifiez par rapport aux positions dans le bateau
+    // Check with boat position
     isInBoat = (p.position.x >= boat.position.x && p.position.x <= boat.position.x + 250 &&
                 p.position.y >= boat.position.y - 130 && p.position.y <= boat.position.y - 60);
     
@@ -377,19 +375,19 @@ void moveBoat() {
 void FromStartToBoat(){
     if (current == STATE_PILE) {
         if(PileSize(startPile, 0) > 0){
-            // Sauvegarde l'élément du sommet
+            // Save the top element of startPile
             Pile *movedPile = malloc(sizeof(Pile));
             *movedPile = startPile;
             movedPile->prev = NULL;
 
-            // Retire l'élément du sommet de startPile
+            // pop element from stack
             if (startPile.prev == NULL) {
                 InitPile(&startPile);
             } else {
                 startPile = *startPile.prev;
             }
 
-            // Ajoute l'élément au sommet de onBoat
+            // add the element to the boat
             if (onBoat.p == NULL) {
                 onBoat.p = movedPile->p;
                 onBoat.prev = movedPile->prev;
